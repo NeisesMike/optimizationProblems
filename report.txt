@@ -1,0 +1,83 @@
+INTRODUCTION
+
+The Rosenbrock Function is a non-convex function used as a "performance
+test problem" for optimization algorithms. In particular, it is
+difficult for algorithms to converge to the global minimum. It was used 
+here to test two such algorithms: Steepest Descent and Fletcher-Reeves.
+Both algorithms used the same Golden Section line search.
+
+We examine several cases for each algorithm. That is, each algorithm is
+tested from various initial positions and with various input parameters:
+the coefficients of the Wolfe Conditions and a line search
+maximum length value for the Golden Section algorithm.
+
+Included with this report is the python code and bash script, which produces
+two output files with the results of test trials run. These files are
+called steepestDescentTrials and fletcherReevesTrials, and will be
+referenced throughout.
+
+SECTION 1
+
+A bash shell script was written to partially automate the testing process for
+various sets of input parameters. A set of sets of input parameters was
+constructed to attempt to account for many broad cases, and each of
+these sets was tested against the Steepest Descent algorithm.
+Concerning the starting points that
+were most distant from the minimizing point, it was found that a larger
+maximum step size in the Golden Section algorithm sometimes allowed the
+algorithm to terminate when otherwise it would not.
+
+Remarkably, no fixed set of values for the Wolfe and Golden Section
+parameters were found, such that the algorithm terminates successfully
+for all the starting points.
+
+The following information for each trial can be found in the *Trials files:
+    Final minimizing point
+    Final objective function value
+    Number of steepest descent steps taken (iterations)
+    Number of line search iterations (low-level iterations)
+
+Concerning the initial points (1,15) and (0,15), no sets of input
+parameters could be found that would allow the algorithm to terminate.
+
+SECTION 2
+
+A bash shell script was written to partially automate the testing process for
+various sets of input parameters. A set of sets of input parameters was
+constructed to attempt to account for many broad cases, and each of
+these sets was tested against the Fletcher-Reeves algorithm.
+Concerning the starting points that
+were most distant from the minimizing point, it was found that a larger
+maximum step size in the Golden Section algorithm sometimes allowed the
+algorithm to terminate when otherwise it would not.
+
+Remarkably, no fixed set of values for the Wolfe and Golden Section
+parameters were found, such that the algorithm terminates successfully
+for all the starting points.
+
+The following information for each trial can be found in the *Trials files:
+    Final minimizing point
+    Final objective function value
+    Number of steepest descent steps taken (iterations)
+    Number of line search iterations (low-level iterations)
+
+Concerning the initial points (1,15) and (0,15), no sets of input
+parameters could be found that would allow the algorithm to terminate.
+
+SECTION 3
+
+When a set of input parameters could be found such that both the
+Steepest Descent and Fletcher-Reeves algorithms terminated, they
+generally agreed on the final position to a high degree of accuracy. In
+fact, in the included *Trials files, it is shown that the two algorithms
+agreed exactly every time they both terminated for the same set of input
+parameters.
+
+In terms of implementation, the algorithms differed only very slightly.
+The only difference was the way the direction of descent was chosen. In
+steepest descent, we choose the steepest path down always. In
+Fletcher-Reeves, we choose a conjugate gradient descent path. Once the
+framework of the algorithm was complete, it was trivially easy to change
+steepest descent into Fletcher-Reeves. However, seeing as how they
+performed identically, one cannot be called superior.
+
