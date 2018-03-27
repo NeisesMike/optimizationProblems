@@ -3,6 +3,13 @@ import math
 import sys
 from termcolor import cprint
 
+#=====command line arguments
+inputX = float(sys.argv[1])
+inputY = float(sys.argv[2])
+inputC1 = float(sys.argv[3])
+inputC2 = float(sys.argv[4])
+inputAlphaMax = float(sys.argv[5])
+
 #======assert some global options
 # verbose gives debugging output
 # info gives minimal informational output
@@ -10,8 +17,8 @@ from termcolor import cprint
 # color gives different output different style
 # strongWolfe enforces strong wolfe conditions
 verbose = False
-info = False 
-color = True
+info = False
+color = False
 strongWolfe = True
 
 #=====define some helper functions
@@ -58,7 +65,7 @@ def thisFunction(x, y):
 def thisGrad(x, y):
     dx = (-400*x*y) + (400*(x**3)) + (2*x) - 2
     dy = (200*y) - (200*(x**2))
-    print "this grad is " + str( np.matrix((dx,dy)) )
+    myprint("this grad is " + str( np.matrix((dx,dy)) ))
     return np.matrix( (dx, dy) )
 
 #this is the phi function
@@ -171,7 +178,7 @@ def isGradientSmall( xi ):
     grad = thisGrad( xi.item(0), xi.item(1) )
     transposeGrad = np.transpose( grad )
     gradientMag = math.sqrt( (grad * transposeGrad) )
-    print gradientMag
+    myprint( str(gradientMag) )
     if( gradientMag <= threshold ):
         infoprint("We stop because the gradient magnitude ( " + str(gradientMag) + " ) is smaller than " + str( threshold ) )
         return True
@@ -206,6 +213,9 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
     i = 0
     while( True ):
         
+        global lowLevelIterations 
+        lowLevelIterations += 1
+
         infoprint("This is iteration " + str(i))
         myprint("a is " + str(a))
         myprint("b is " + str(b))
@@ -254,37 +264,45 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
 
 #===== BEGIN STEEPEST DESCENT ALGORITHM
 #assert intial conditions
-Xi = np.matrix( (1.2, 1.2) )
-Di = np.matrix( (1.0/math.sqrt(2.0), -1.0/math.sqrt(2.0) ) )
-condition1 = 0.01
-condition2 = 0.1
-aMax = 2
+Xi = np.matrix( (inputX, inputY) )
+Di = (-1) * thisGrad( Xi.item(0), Xi.item(1) )
+condition1 = inputC1
+condition2 = inputC2
+aMax = inputAlphaMax
 
 counter = 0;
 
+#output variable
+lowLevelIterations = 0
+
 while( True ):
     counter += 1
-    print "fx is " + str( thisFunction(Xi.item(0), Xi.item(1) ) )
+    infoprint("\nfx is " + str( thisFunction(Xi.item(0), Xi.item(1) ) ) )
     
     #choose direction (negative gradient)
     Di = (-1) * thisGrad( Xi.item(0), Xi.item(1) )
-    print "di is " + str(Di)
+    myprint("di is " + str(Di))
     #normalize the direction
     origin = np.matrix( (0, 0) )
     magDi = ndist(origin, Di)
     Di = Di / magDi
-    print "norm di is " + str(Di)
+    myprint("norm di is " + str(Di))
 
     #perform line search
     Xi = goldenDirectionalSearch(Xi, Di, condition1, condition2, aMax )
+    infoprint( "Golden Search yields Xi = " + str(Xi) )
 
-    print "Xi is"
-    print Xi
+    myprint("Xi is")
+    myprint( str(Xi) )
 
     #maybe exit
     if( isGradientSmall( Xi ) ):
         break;
 print "After " + str(counter) + " iterations,"
-print "The minimum point was calculated to be " + str(Xi)
-print "The function value here is " + str(thisFunction(Xi.item(0), Xi.item(1)))
+print "The minimum point was calculated to be " + str(Xi) + "."
+print "The function value here is " + str(thisFunction(Xi.item(0), Xi.item(1))) + "."
+print "It took " + str(lowLevelIterations) + " low-level iterations."
+
+
+
 

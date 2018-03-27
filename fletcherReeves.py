@@ -3,6 +3,13 @@ import math
 import sys
 from termcolor import cprint
 
+#======command line arguments
+inputX = float(sys.argv[1])
+inputY = float(sys.argv[2])
+inputC1 = float(sys.argv[3])
+inputC2 = float(sys.argv[4])
+inputAlphaMax = float(sys.argv[5])
+
 #======assert some global options
 # verbose gives debugging output
 # info gives minimal informational output
@@ -220,6 +227,9 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
     i = 0
     while( True ):
         
+        global lowLevelIterations 
+        lowLevelIterations += 1
+        
         infoprint("This is iteration " + str(i))
         myprint("a is " + str(a))
         myprint("b is " + str(b))
@@ -268,13 +278,15 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
 
 #===== BEGIN STEEPEST DESCENT ALGORITHM
 #assert intial conditions
-Xi = np.matrix( (1.2, 1.2) )
+Xi = np.matrix( (inputX, inputY) )
 Di = (-1) * thisGrad( Xi.item(0), Xi.item(1) )
-condition1 = 0.01
-condition2 = 0.1
-aMax = 2
+condition1 = inputC1
+condition2 = inputC2
+aMax = inputAlphaMax
 
 counter = 0;
+
+lowLevelIterations = 0
 
 while( True ):
     counter += 1
@@ -301,4 +313,5 @@ while( True ):
 print "After " + str(counter) + " iterations,"
 print "The minimum point was calculated to be " + str(Xi)
 print "The function value here is " + str(thisFunction(Xi.item(0), Xi.item(1)))
+print "It took " + str(lowLevelIterations) + " low-level iterations."
 
