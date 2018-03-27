@@ -10,8 +10,8 @@ from termcolor import cprint
 # color gives different output different style
 # strongWolfe enforces strong wolfe conditions
 verbose = False
-info = True 
-color = True
+info = False 
+color = False
 strongWolfe = True
 
 #=====define some helper functions
@@ -51,14 +51,16 @@ phi = (math.sqrt(5.0) + 1.0) / 2.0
 #this is the concrete function, given in the assignment description
 #returns a scalar value
 def thisFunction(x, y):
-    return (math.exp( (y-x)/2.0 ) + (5.0/8.0)*(x-y))
+    return ( 100*(y - x**2)**2 + (1-x)**2 )
 
 #this is the gradient of the given function
 #returns a 2d matrix
 def thisGrad(x, y):
-    dx = (-0.5) * math.exp((y-x)/2) + 5.0/8.0
-    dy = (0.5) * math.exp((y-x)/2) - 5.0/8.0
-    return np.matrix( (dx, dy) )
+    dx = (-400*x*y) + (400*(x**3)) + (2*x) - 2
+    dy = (200*y) - (200*(x**2))
+    grad = np.matrix((dx,dy))
+    myprint("this grad is " + str( grad ) )
+    return grad
 
 #this is the phi function
 #INPUTS
@@ -95,13 +97,14 @@ def gradPhi(xk, alpha, dk):
 #that is, a point occuring *beneath* this line has decreased sufficiently
 #INPUTS
 ## xi is the initial position
+## xk is the current position
 ## alpha is the distance from xi
 ## dk is the direction of movement
 ## c1 is the wolfe coefficient
 #OUTPUTS the value on this line at distance alpha from xi along direction dk
-def elFunction( xi, alpha, dk, c1 ):
-    point = phiFunction(xi, 0, dk)
-    slope = gradPhi(xi, 0, dk)
+def elFunction( xk, alpha, dk, c1 ):
+    point = phiFunction(xk, 0, dk)
+    slope = gradPhi(xk, 0, dk)
     newPoint = point + c1 * slope * alpha
     return newPoint
 
@@ -112,10 +115,10 @@ def elFunction( xi, alpha, dk, c1 ):
 ## alpha is the distance from xi
 ## xk is the current position
 ## dk is the direction of movement
-def sufficientDecrease( xi, c1, alpha, dk ):
-    term1 = phiFunction(xi, alpha, dk)
+def sufficientDecrease( xk, c1, alpha, dk ):
+    term1 = phiFunction(xk, alpha, dk)
     infoprint("phi(alpha) is " + str(term1))
-    term2 = elFunction(xi, alpha, dk, c1)
+    term2 = elFunction(xk, alpha, dk, c1)
     myprint(term1)
     myprint(term2)
     return ( term1 <= term2 )
@@ -164,16 +167,30 @@ def isStopSatisfied( xi, c1, c2, alpha, dk ):
 
 #this is a boolean-valued function to represent a stopping condition
 #return true (stop!) when the length of the gradient vector is equal to or less than 0.2
-def isGradientSmall( xi, alpha, dk ):
+def isGradientSmall( xi ):
     threshold = 0.2
     grad = thisGrad( xi.item(0), xi.item(1) )
     transposeGrad = np.transpose( grad )
     gradientMag = math.sqrt( (grad * transposeGrad) )
+    myprint(str(gradientMag))
     if( gradientMag <= threshold ):
         infoprint("We stop because the gradient magnitude ( " + str(gradientMag) + " ) is smaller than " + str( threshold ) )
         return True
     else:
         return False
+
+#this is a scalar-valued function
+#this is a helper for computing the conjugate gradient direction
+def betaFunction( xi, xf ):
+    gradi = thisGrad( xi.item(0), xi.item(1) )
+    tGradi = np.transpose( gradi )
+    
+    gradf = thisGrad( xf.item(0), xf.item(1) )
+    tGradf = np.transpose( gradf )
+    beta = ( tGradf * gradf ) / ( tGradi * gradi)
+    myprint("beta is " + str(beta))
+    return beta
+    
 
 #=====BEGIN GOLDEN SEARCH FUNCTIONS
 
@@ -212,12 +229,7 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
         infoprint("alpha is " + str(alpha))
 
         #check the stopping conditions
-        #if( isStopSatisfied( xi, c1, c2, alpha, dk ):
-        #    break;
-
-        #NEW: stopping conditions
-        xi = ( a + b ) / 2.0
-        if( isGradientSmall( xi, alpha, dk ) ):
+        if( isStopSatisfied( xi, c1, c2, alpha, dk ) ):
             break;
 
         #calculate middle points
@@ -240,8 +252,10 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
         #decide how to adjust the interval
         if( fc < fd ):
             b = d
+            myprint("replace b")
         else:
             a = c
+            myprint("replace a")
 
         i += 1
         infoprint("\n")
@@ -252,14 +266,39 @@ def goldenDirectionalSearch( xi, dk, c1, c2, alphaMax ):
 
 #END GOLDEN SECTION DIRECTIONAL SEARCH
 
-#===== BEGIN EXECUTION OF GOLDEN SECTION SEARCH
+#===== BEGIN STEEPEST DESCENT ALGORITHM
 #assert intial conditions
-Xi = np.matrix( (1, 3) )
-Di = np.matrix( (1.0/math.sqrt(2.0), -1.0/math.sqrt(2.0) ) )
+Xi = np.matrix( (1.2, 1.2) )
+Di = (-1) * thisGrad( Xi.item(0), Xi.item(1) )
 condition1 = 0.01
 condition2 = 0.1
-aMax = 50
+aMax = 2
 
-FinalX = goldenDirectionalSearch(Xi, Di, condition1, condition2, aMax )
-print "The minimum point was calculated to be " + str(FinalX)
-print "The function value here is " + str(thisFunction(FinalX.item(0), FinalX.item(1)))
+counter = 0;
+
+while( True ):
+    counter += 1
+    
+    #choose direction (negative gradient)
+    Di = (-1) * thisGrad( Xi.item(0), Xi.item(1) )
+    myprint("di is " + str(Di))
+
+    #normalize the direction
+    origin = np.matrix( (0, 0) )
+    magDi = ndist(origin, Di)
+    Di = Di / magDi
+    myprint("norm di is " + str(Di))
+
+    #perform line search
+    oldX = Xi
+    Xi = goldenDirectionalSearch(Xi, Di, condition1, condition2, aMax )
+    Di = Di * betaFunction(oldX, Xi) - thisGrad( Xi.item(0), Xi.item(1) )
+
+    #maybe exit
+    if( isGradientSmall( Xi ) ):
+        break;
+
+print "After " + str(counter) + " iterations,"
+print "The minimum point was calculated to be " + str(Xi)
+print "The function value here is " + str(thisFunction(Xi.item(0), Xi.item(1)))
+
